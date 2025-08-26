@@ -23,6 +23,7 @@ from display import TextBufferEPD
 from printertest import print_markdown
 from openai import OpenAI
 from dotenv import load_dotenv
+import datetime
 
 # ================================
 # Configuration constants
@@ -39,7 +40,7 @@ POST_SESSION_COOLDOWN_SEC = 1.5  # ignore wakeword for N sec after a session
 
 SESSION_MAX_SEC = 40.0         # hard stop after N seconds
 SILENCE_TIMEOUT_SEC = 5.0      # stop after N seconds of silence
-RMS_SILENCE_THRESHOLD = 300   # RMS threshold for silence (tune per mic/room)
+RMS_SILENCE_THRESHOLD = 500   # RMS threshold for silence (tune per mic/room)
 
 # ================================
 # OpenAI client setup
@@ -87,7 +88,7 @@ def main() -> None:
     # ---- E-paper init ----
     epd = epaper.epaper("epd2in13_V4").EPD()
     epd.init()
-    text_buffer = TextBufferEPD(epd, font_size=64)
+    text_buffer = TextBufferEPD(epd, font_path="/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", font_size=16)
     text_buffer.clear()
 
     print("Loading wake word model...")
@@ -113,7 +114,7 @@ def main() -> None:
     whisper_model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
     print("Ready! Press Ctrl+C to stop.")
 
-    text_buffer.set_text("Ready!")
+    text_buffer.set_text(f"Ready! {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     # ---- Sounddevice defaults ----
     sd.default.channels = CHANNELS
@@ -144,7 +145,7 @@ def main() -> None:
         try:
             oww.reset()
             print("🧹 Wake model reset via reset()")
-            text_buffer.set_text("Ready!")
+            text_buffer.set_text(f"Ready! {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         except AttributeError:
             try:
                 oww = WakeModel()
@@ -308,6 +309,7 @@ def main() -> None:
                 silence_start_ts = 0.0
                 wake_cooldown_until = now + 0.5  # brief guard during transition
 
+            
             transcription_thread = threading.Thread(target=transcription_worker, daemon=True)
             transcription_thread.start()
 
